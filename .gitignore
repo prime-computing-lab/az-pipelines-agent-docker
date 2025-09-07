@@ -53,6 +53,3 @@ logs/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# Video production materials (not for git)
-.ignore/
