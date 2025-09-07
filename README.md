@@ -1,11 +1,11 @@
 # Azure Pipelines Self-Hosted Agent in Docker
 
-Run Azure Pipelines self-hosted agents in Docker containers on macOS (Intel and Apple Silicon).
+Run Azure Pipelines self-hosted agents in Docker containers.
 
 ## Quick Start
 
 1. **Prerequisites**
-   - macOS with Docker Desktop
+   - VM with Docker Desktop
    - Azure DevOps organization
    - Permission to create agent pools
 
