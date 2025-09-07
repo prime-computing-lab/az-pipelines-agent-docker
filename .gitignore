@@ -1,0 +1,58 @@
+# Environment files with secrets
+.env
+.env.local
+.env.prod
+.env.staging
+*.env
+
+# Secret files
+*.secret
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Azure Pipelines agent files
+agent/
+_work/
+
+# Docker files
+.docker/
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Shell history
+.bash_history
+.zsh_history
+.shell_history
+
+# IDE files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Backup files
+*.bak
+*.backup
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Video production materials (not for git)
+.ignore/

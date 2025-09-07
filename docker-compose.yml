@@ -1,0 +1,47 @@
+services:
+  azp-agent:
+    build: .
+    
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+    
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+    
+    # Restart policy for production use
+    restart: unless-stopped
+    
+    # Resource limits to prevent runaway processes
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "Agent.Listener"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # Optional: Mount for persistent work directory
+    # Uncomment if you need build artifacts to persist
+    # volumes:
+    #   - agent-work:/home/azp/_work
+    
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+
+# Optional persistent volume for work directory
+# volumes:
+#   agent-work:
