@@ -18,23 +18,10 @@ RUN apt-get update && apt-get install -y \
     netcat-openbsd \
     libssl3 \
     ca-certificates \
-    sudo \
-    wget \
-    unzip \
-    python3-pip \
     && rm -rf /var/lib/apt/lists/*
-
-# Install AWS CLI v2
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install \
-    && rm -rf awscliv2.zip aws/
 
 # Create a non-root user for security
 RUN useradd --create-home --shell /bin/bash azp
-
-# Add azp user to sudoers with NOPASSWD
-RUN echo "azp ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 # Set working directory
 WORKDIR /home/azp

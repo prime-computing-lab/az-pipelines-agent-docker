@@ -1,0 +1,37 @@
+# Test Pipeline for Containerized Azure Pipelines Agent Demo
+# Use this pipeline to validate the agent is working correctly
+
+trigger: none  # Manual trigger only for demo purposes
+
+pool:
+  name: demo-agent  # Change this to match your agent pool name
+
+variables:
+  - group: dev
+
+steps:
+- bash: wget https://rolesanywhere.amazonaws.com/releases/1.7.1/Aarch64/Linux/Amzn2023/aws_signing_helper; chmod +x aws_signing_helper; # https://docs.aws.amazon.com/rolesanywhere/latest/userguide/credential-helper.html
+  displayName: Install AWS Signer
+
+- task: DownloadSecureFile@1
+  name: Certificate
+  displayName: 'Download certificate'
+  inputs:
+    secureFile: 'certificate.crt'
+
+- task: DownloadSecureFile@1
+  name: Privatekey
+  displayName: 'Download private key'
+  inputs:
+    secureFile: 'private.key'
+
+- bash: |
+    aws configure set credential_process "./aws_signing_helper credential-process --certificate $(Certificate.secureFilePath) --private-key $(Privatekey.secureFilePath) --trust-anchor-arn $(TRUSTANCHORARN) --profile-arn $(PROFILEARN) --role-arn $(ROLEARN)" --profile default
+    echo "##vso[task.setvariable variable=AWS_SDK_LOAD_CONFIG;]1"  
+  displayName: Obtain AWS Credentials
+
+- bash: |
+    echo "Configuring AWS CLI..."
+    aws --version
+    aws sts get-caller-identity
+  displayName: 'Configure AWS CLI'

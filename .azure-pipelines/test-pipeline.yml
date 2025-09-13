@@ -1,0 +1,58 @@
+# Test Pipeline for Containerized Azure Pipelines Agent Demo
+# Use this pipeline to validate the agent is working correctly
+
+trigger: none  # Manual trigger only for demo purposes
+
+pool:
+  name: demo-agent  # Change this to match your agent pool name
+
+variables:
+  - name: demoMessage
+    value: 'Hello from containerized agent!'
+
+steps:
+- script: |
+    echo "=================================="
+    echo "$(demoMessage)"
+    echo "=================================="
+    echo ""
+    echo "Agent Information:"
+    echo "Agent Name: $(Agent.Name)"
+    echo "Agent OS: $(Agent.OS)"
+    echo "Agent Version: $(Agent.Version)"
+    echo ""
+    echo "System Information:"
+    uname -a
+    echo ""
+    echo "Available Tools:"
+    git --version
+    curl --version | head -n1
+    echo ""
+    echo "Docker Status (should fail in container):"
+    docker --version 2>/dev/null || echo "Docker not available (expected in isolated container)"
+    echo ""
+    echo "Build completed successfully!"
+    echo "=================================="
+  displayName: 'Test Containerized Agent'
+
+- script: |
+    echo "Testing environment variables..."
+    echo "Build ID: $(Build.BuildId)"
+    echo "Source Branch: $(Build.SourceBranch)"
+    echo "Agent Work Folder: $(Agent.WorkFolder)"
+    echo "Pipeline Workspace: $(Pipeline.Workspace)"
+  displayName: 'Environment Test'
+
+- script: |
+    echo "Creating test artifact..."
+    mkdir -p $(Pipeline.Workspace)/test-output
+    echo "Agent test completed at $(date)" > $(Pipeline.Workspace)/test-output/agent-test.txt
+    echo "Test artifact created successfully"
+  displayName: 'Create Test Artifact'
+
+# Optional: Publish test results (uncomment if needed)
+# - task: PublishBuildArtifacts@1
+#   inputs:
+#     pathToPublish: '$(Pipeline.Workspace)/test-output'
+#     artifactName: 'agent-test-results'
+#   displayName: 'Publish Test Results'
