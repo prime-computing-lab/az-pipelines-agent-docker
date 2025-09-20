@@ -1,0 +1,70 @@
+# Test Pipeline 9 - Variables Template Demo
+# Demonstrates using variables templates for multi-environment deployment
+# Based on enterprise template pattern from pipeline 8 but using variables templates instead of variable groups
+# Shows dynamic variables template loading per environment
+
+trigger: none  # Manual trigger only for demo purposes
+
+pool:
+  name: demo-agent  # Change this to match your agent pool name
+
+# Include variables from template
+variables:
+- name: devVarTemplate
+  value: templates/variables/dev-variables.yml
+- name: prodVarTemplate
+  value: templates/variables/prod-variables.yml
+- template: ${{ variables.devVarTemplate }}  # Load development variables template by default
+- name: deploymentTemplate
+  value: templates/stages/deployment-variables-template.yml
+
+# Include the reusable AcquireCredentials stage template
+stages:
+- template: templates/stages/acquire-credentials.yml
+  parameters:
+    poolName: demo-agent
+    stageName: AcquireCredentials
+    displayName: 'Stage 1: Acquire AWS Temporary Credentials'
+
+# Development Environment Deployment using Variables Template
+- template: ${{ variables.deploymentTemplate }}
+  parameters:
+    environment: ${{ variables.environment }} # Loaded from dev-variables.yml
+    environmentDisplayName: 'Stage 2a: Development Deployment (Variables Template)'
+    stageName: DevDeployment
+    poolName: demo-agent
+    variablesTemplate: ${{ variables.devVarTemplate }}
+    dependsOn: AcquireCredentials
+    condition: succeeded()
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🔧 Development-specific tasks using variables template"
+        echo "Variables loaded from:  $(devVarTemplate)"
+        echo "Environment from template: $(environment)"
+        echo "Deployment strategy from template: $(deploymentStrategy)"
+        echo "✅ Development monitoring and debug logging enabled"
+      displayName: 'Development Environment Setup (Variables Template)'
+
+# Production Environment Deployment using Variables Template
+- template: ${{ variables.deploymentTemplate }}
+  parameters:
+    environment: prod
+    environmentDisplayName: 'Stage 2b: Production Deployment (Variables Template)'
+    stageName: ProdDeployment
+    poolName: demo-agent
+    variablesTemplate: ${{ variables.prodVarTemplate }}
+    dependsOn:
+      - AcquireCredentials
+      - DevDeployment
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🛡️ Production-specific tasks using variables template"
+        echo "Variables loaded from: $(prodVarTemplate)"
+        echo "Environment from template: $(environment)"
+        echo "Deployment strategy from template: $(deploymentStrategy)"
+        echo "✅ Production security scanning and compliance checks"
+        echo "✅ Production monitoring and alerting configured"
+      displayName: 'Production Environment Setup (Variables Template)'

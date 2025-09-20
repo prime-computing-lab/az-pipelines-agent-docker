@@ -1,0 +1,212 @@
+# Variables Template Deployment Stage Template - BROKEN VERSION
+# DEMONSTRATES BROKEN TEMPLATE PATH RESOLUTION - FOR EDUCATIONAL PURPOSES
+# ERROR: Variables template paths are resolved incorrectly
+# ISSUE: Relative path resolution from template location causes "File not found" errors
+
+parameters:
+- name: environment
+  type: string
+  displayName: 'Target environment name'
+- name: environmentDisplayName
+  type: string
+  displayName: 'Human-readable environment name'
+- name: stageName
+  type: string
+  displayName: 'Stage name for pipeline'
+- name: poolName
+  type: string
+  default: demo-agent
+  displayName: 'Agent pool name'
+- name: variablesTemplate
+  type: string
+  displayName: 'Variables template path for environment'
+- name: dependsOn
+  type: object
+  default: []
+  displayName: 'Stage dependencies'
+- name: condition
+  type: string
+  default: succeeded()
+  displayName: 'Stage execution condition'
+- name: deploymentStrategy
+  type: string
+  default: runOnce
+  values:
+  - runOnce
+  - rolling
+  - canary
+  displayName: 'Deployment strategy'
+- name: environmentSpecificTasks
+  type: stepList
+  default: []
+  displayName: 'Environment-specific deployment tasks'
+
+stages:
+- stage: ${{ parameters.stageName }}
+  displayName: ${{ parameters.environmentDisplayName }}
+  dependsOn: ${{ parameters.dependsOn }}
+  condition: ${{ parameters.condition }}
+  jobs:
+  - job: Deploy${{ parameters.environment }}
+    displayName: 'Deploy to ${{ parameters.environment }} Environment (Variables Template)'
+    pool:
+      name: ${{ parameters.poolName }}
+    variables:
+      # ❌ BROKEN: This path resolution is INCORRECT
+      # The path is resolved relative to THIS file location (templates/stages/)
+      # So it looks for: templates/stages/templates/variables/dev-variables.yml
+      # Which results in: "File /templates/stages/templates/variables/dev-variables.yml not found"
+      - template: ${{ parameters.variablesTemplate }}
+      # Runtime variables for deployment
+      - name: Environment
+        value: ${{ parameters.environment }}
+      - name: DeploymentPrefix
+        value: ${{ parameters.environment }}
+      # AWS credentials from AcquireCredentials stage
+      - name: AWS_ACCESS_KEY_ID
+        value: $[stageDependencies.AcquireCredentials.GetAWSCredentials.outputs['extractCredentials.awsAccessKeyId']]
+      - name: AWS_SECRET_ACCESS_KEY
+        value: $[stageDependencies.AcquireCredentials.GetAWSCredentials.outputs['extractCredentials.awsSecretAccessKey']]
+      - name: AWS_SESSION_TOKEN
+        value: $[stageDependencies.AcquireCredentials.GetAWSCredentials.outputs['extractCredentials.awsSessionToken']]
+      - name: awsExpiration
+        value: $[stageDependencies.AcquireCredentials.GetAWSCredentials.outputs['extractCredentials.awsExpiration']]
+      - name: AWS_DEFAULT_REGION
+        value: $(awsRegion)
+    steps:
+    # Variables Template Validation
+    - bash: |
+        echo "🔄 Variables Template Deployment - ${{ parameters.environment }} Environment"
+        echo "Environment: ${{ parameters.environment }}"
+        echo "Variables Template: ${{ parameters.variablesTemplate }}"
+        echo "Deployment Strategy: ${{ parameters.deploymentStrategy }}"
+        echo "Credentials expire at: $(awsExpiration)"
+
+        echo "--- Variables Template vs Variable Groups Comparison ---"
+        echo "✅ Variables Template Benefits:"
+        echo "  • Version-controlled variable definitions"
+        echo "  • Git-based change tracking and history"
+        echo "  • No dependency on Azure DevOps variable groups"
+        echo "  • Easier to maintain across environments"
+        echo "  • Better suited for infrastructure-as-code"
+        echo "  • Can be parameterized and reused"
+        echo "  • Supports conditional variable loading"
+        echo "  • Environment-specific template selection"
+
+        echo "--- Variables Loaded from Template ---"
+        echo "Variables Template: ${{ parameters.variablesTemplate }}"
+        echo "AWS Account ID: $(AWS_ACCOUNT_ID)"
+        echo "AWS Region: $(awsRegion)"
+        echo "Environment: $(environment)"
+        echo "Deployment Strategy: $(deploymentStrategy)"
+        echo "Profile ARN: $(profilearn)"
+        echo "Role ARN: $(rolearn)"
+        echo "Trust Anchor ARN: $(trustanchorarn)"
+      displayName: 'Variables Template Information for ${{ parameters.environment }}'
+
+    # AWS Credentials Validation
+    - bash: |
+        echo "🔧 Testing AWS CLI with variables template configuration..."
+        aws sts get-caller-identity
+
+        if [ $? -eq 0 ]; then
+          echo "✅ AWS credentials validation successful for ${{ parameters.environment }}"
+          echo "✅ Variables template integration working correctly"
+        else
+          echo "❌ AWS credentials validation failed for ${{ parameters.environment }}"
+          echo "❌ Check variables template configuration"
+          exit 1
+        fi
+      displayName: 'Validate AWS Credentials for ${{ parameters.environment }}'
+
+    # Main Deployment Steps
+    - bash: |
+        echo "🚀 Variables Template Deployment to ${{ parameters.environment }} Environment"
+        echo "--- ${{ parameters.environment }} Environment Information ---"
+        echo "Environment: ${{ parameters.environment }}"
+        echo "Deployment Prefix: $(DeploymentPrefix)"
+        echo "Deployment Strategy: ${{ parameters.deploymentStrategy }}"
+        echo "Variables Source: ${{ parameters.variablesTemplate }}"
+
+        echo "--- AWS Account Information ---"
+        aws sts get-caller-identity
+
+        echo "--- Variables Template Pattern Benefits ---"
+        echo "✅ Environment-specific variable loading"
+        echo "✅ Git-based variable management"
+        echo "✅ No Azure DevOps variable group dependency"
+        echo "✅ Infrastructure-as-code alignment"
+        echo "✅ Version-controlled configuration"
+        echo "✅ Reusable template design"
+        echo "✅ Environment isolation and governance"
+        echo "✅ Dynamic template selection"
+      displayName: 'Deploy Application to ${{ parameters.environment }} (Variables Template)'
+
+    # AWS Resource Operations
+    - bash: |
+        echo "--- AWS Resource Discovery for ${{ parameters.environment }} ---"
+        echo "Using variables from template: ${{ parameters.variablesTemplate }}"
+
+        echo "--- Available AWS Regions ---"
+        aws ec2 describe-regions --query 'Regions[*].RegionName' --output table || echo "EC2 describe-regions failed (may need permissions)"
+
+        echo "--- S3 Operations for ${{ parameters.environment }} ---"
+        aws s3 ls || echo "S3 ls failed (may need permissions or no buckets exist)"
+
+        echo "--- Template Variables Summary ---"
+        echo "Environment from template: $(environment)"
+        echo "AWS Region from template: $(awsRegion)"
+        echo "AWS Account from template: $(AWS_ACCOUNT_ID)"
+      displayName: 'AWS Resource Discovery for ${{ parameters.environment }}'
+
+    # Environment-specific tasks from parameters
+    - ${{ if ne(length(parameters.environmentSpecificTasks), 0) }}:
+      - ${{ each step in parameters.environmentSpecificTasks }}:
+        - ${{ step }}
+
+    # Default environment-specific logic
+    - bash: |
+        echo "--- Environment-Specific Variables Template Tasks ---"
+        if [ "${{ parameters.environment }}" = "dev" ]; then
+          echo "✅ Development environment tasks (variables template: ${{ parameters.variablesTemplate }}):"
+          echo "  - Deploy to development infrastructure"
+          echo "  - Run development-specific health checks"
+          echo "  - Configure development monitoring"
+          echo "  - Enable debug logging and verbose output"
+          echo "  - Development environment from template: $(environment)"
+        elif [ "${{ parameters.environment }}" = "prod" ]; then
+          echo "✅ Production environment tasks (variables template: ${{ parameters.variablesTemplate }}):"
+          echo "  - Deploy to production infrastructure"
+          echo "  - Run production health checks"
+          echo "  - Configure production monitoring and alerting"
+          echo "  - Enable security scanning and compliance"
+          echo "  - Validate backup and disaster recovery"
+          echo "  - Production environment from template: $(environment)"
+        else
+          echo "✅ Generic environment tasks for: ${{ parameters.environment }}"
+          echo "  - Deploy to ${{ parameters.environment }} infrastructure"
+          echo "  - Run environment health checks"
+          echo "  - Configure environment monitoring"
+          echo "  - Variables template: ${{ parameters.variablesTemplate }}"
+          echo "  - Environment from template: $(environment)"
+        fi
+      displayName: 'Environment-Specific Tasks for ${{ parameters.environment }}'
+
+    # Post-deployment validation
+    - bash: |
+        echo "🔍 Post-deployment validation for ${{ parameters.environment }}"
+        echo "--- Variables Template Deployment Summary ---"
+        echo "✅ Application deployment completed successfully"
+        echo "✅ Variables template integration validated"
+        echo "✅ AWS credentials still valid: $(awsExpiration)"
+        echo "✅ Environment: ${{ parameters.environment }} is ready"
+        echo "--- Deployment Details ---"
+        echo "Strategy Used: ${{ parameters.deploymentStrategy }}"
+        echo "Template: Variables Template Deployment Pattern"
+        echo "Variables Source: ${{ parameters.variablesTemplate }}"
+        echo "Environment: ${{ parameters.environment }}"
+        echo "Environment Value from Template: $(environment)"
+        echo ""
+        echo "✅ ${{ parameters.environment }} variables template deployment completed successfully!"
+        echo "✅ Variables template pattern demonstrated successfully!"
+      displayName: 'Post-deployment Health Check for ${{ parameters.environment }}'

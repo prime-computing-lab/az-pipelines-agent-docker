@@ -1,0 +1,68 @@
+# Test Pipeline 9 - Variables Template Demo - BROKEN VERSION
+# Demonstrates BROKEN template path resolution - for educational purposes
+# Shows common mistake with variables template path resolution in Azure DevOps
+# ERROR: Template paths resolved incorrectly causing "File not found" errors
+
+trigger: none  # Manual trigger only for demo purposes
+
+pool:
+  name: demo-agent  # Change this to match your agent pool name
+
+# No global variables - each stage will load environment-specific variables templates
+variables: []
+
+# Include the reusable AcquireCredentials stage template
+stages:
+- template: templates/stages/acquire-credentials.yml
+  parameters:
+    poolName: demo-agent
+    variableGroup: dev  # AcquireCredentials still uses variable group for credentials
+    stageName: AcquireCredentials
+    displayName: 'Stage 1: Acquire AWS Temporary Credentials'
+
+# Development Environment Deployment using Variables Template - BROKEN
+- template: templates/stages/deployment-variables-template-broken.yml
+  parameters:
+    environment: dev
+    environmentDisplayName: 'Stage 2a: Development Deployment (Variables Template)'
+    stageName: DevDeployment
+    poolName: demo-agent
+    # ❌ BROKEN: This path resolution is INCORRECT
+    # The path is resolved relative to THIS file location (templates/stages/)
+    # So it looks for: templates/stages/templates/variables/dev-variables.yml
+    # Which results in: "File /templates/stages/templates/variables/dev-variables.yml not found"
+    variablesTemplate: templates/variables/dev-variables.yml
+    dependsOn: AcquireCredentials
+    condition: succeeded()
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🔧 Development-specific tasks using variables template"
+        echo "Variables loaded from: templates/variables/dev-variables.yml"
+        echo "Environment from template: $(environment)"
+        echo "Deployment strategy from template: $(deploymentStrategy)"
+        echo "✅ Development monitoring and debug logging enabled"
+      displayName: 'Development Environment Setup (Variables Template)'
+
+# Production Environment Deployment using Variables Template - BROKEN
+- template: templates/stages/deployment-variables-template-broken.yml
+  parameters:
+    environment: prod
+    environmentDisplayName: 'Stage 2b: Production Deployment (Variables Template)'
+    stageName: ProdDeployment
+    poolName: demo-agent
+    variablesTemplate: templates/variables/prod-variables.yml
+    dependsOn:
+      - AcquireCredentials
+      - DevDeployment
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🛡️ Production-specific tasks using variables template"
+        echo "Variables loaded from: templates/variables/prod-variables.yml"
+        echo "Environment from template: $(environment)"
+        echo "Deployment strategy from template: $(deploymentStrategy)"
+        echo "✅ Production security scanning and compliance checks"
+        echo "✅ Production monitoring and alerting configured"
+      displayName: 'Production Environment Setup (Variables Template)'

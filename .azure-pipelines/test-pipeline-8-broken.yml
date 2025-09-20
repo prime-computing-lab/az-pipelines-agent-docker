@@ -1,0 +1,62 @@
+# Test Pipeline 8 - BROKEN - Demonstrates Stage Dependency Issue
+# This pipeline shows the broken dependsOn configuration that causes prod deployment to fail
+# Problem: Prod stage cannot access AcquireCredentials outputs due to indirect dependency
+# Fix: See test-pipeline-8-template-nest.yml for the corrected version
+
+trigger: none  # Manual trigger only for demo purposes
+
+pool:
+  name: demo-agent  # Change this to match your agent pool name
+
+variables:
+  - group: dev
+
+# Include the reusable AcquireCredentials stage template
+stages:
+- template: templates/stages/acquire-credentials.yml
+  parameters:
+    poolName: demo-agent
+    variableGroup: dev
+    stageName: AcquireCredentials
+    displayName: 'Stage 1: Acquire AWS Temporary Credentials (Template)'
+
+# Development Environment Deployment
+- template: templates/stages/deployment.yml
+  parameters:
+    environment: dev
+    environmentDisplayName: 'Stage 2a: Development Deployment (Enterprise Template)'
+    stageName: DevDeployment
+    poolName: demo-agent
+    variableGroup: dev
+    dependsOn: AcquireCredentials
+    condition: succeeded()
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🔧 Development-specific deployment tasks"
+        echo "Enabling debug mode and verbose logging"
+        echo "Setting up development monitoring dashboards"
+      displayName: 'Development Environment Setup'
+
+# Production Environment Deployment - BROKEN DEPENDENCY
+- template: templates/stages/deployment.yml
+  parameters:
+    environment: prod
+    environmentDisplayName: 'Stage 2b: Production Deployment (Enterprise Template) - BROKEN'
+    stageName: ProdDeployment
+    poolName: demo-agent
+    variableGroup: dev
+    dependsOn: DevDeployment  # ❌ BROKEN: Only depends on DevDeployment, not AcquireCredentials
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    deploymentStrategy: runOnce
+    environmentSpecificTasks:
+    - bash: |
+        echo "🛡️ Production-specific deployment tasks"
+        echo "Running security scans and compliance checks"
+        echo "Setting up production monitoring and alerting"
+        echo "Configuring backup and disaster recovery"
+        echo ""
+        echo "❌ ISSUE: This stage cannot access AcquireCredentials outputs"
+        echo "❌ RESULT: awsExpiration will be empty, credential validation will fail"
+        echo "❌ ERROR: could not parse PEM data (because credentials are missing)"
+      displayName: 'Production Environment Setup - BROKEN'
