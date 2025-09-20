@@ -1,0 +1,19 @@
+# Variables Template - Development Environment
+# Development-specific variable values following enterprise governance patterns
+# Optimized for development workflows and testing
+
+variables:
+- name: AWS_ACCOUNT_ID
+  value: 123456789012
+- name: awsRegion
+  value: ap-southeast-2
+- name: profilearn
+  value: arn:aws:rolesanywhere:ap-southeast-2:123456789012:profile/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+- name: rolearn
+  value: arn:aws:iam::123456789012:role/CICDRole
+- name: trustanchorarn
+  value: arn:aws:rolesanywhere:ap-southeast-2:123456789012:trust-anchor/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+- name: environment
+  value: dev
+- name: deploymentStrategy
+  value: runOnce
