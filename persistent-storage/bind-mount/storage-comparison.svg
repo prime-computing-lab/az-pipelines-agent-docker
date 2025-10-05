@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450">
+  <!-- Title -->
+  <text x="400" y="30" font-size="24" font-weight="bold" text-anchor="middle" fill="#333">Docker Persistent Storage Comparison</text>
+
+  <!-- Column Headers -->
+  <rect x="50" y="50" width="350" height="50" fill="#4A90E2" rx="5"/>
+  <rect x="400" y="50" width="350" height="50" fill="#E67E22" rx="5"/>
+
+  <text x="225" y="82" font-size="18" font-weight="bold" text-anchor="middle" fill="white">Volume Mounts</text>
+  <text x="575" y="82" font-size="18" font-weight="bold" text-anchor="middle" fill="white">Bind Mounts</text>
+
+  <!-- Row 1 -->
+  <rect x="50" y="100" width="350" height="50" fill="#E8F4F8"/>
+  <rect x="400" y="100" width="350" height="50" fill="#FCE8DC"/>
+  <text x="60" y="130" font-size="14" fill="#333">• Managed by Docker daemon</text>
+  <text x="410" y="130" font-size="14" fill="#333">• Mount specific host directory</text>
+
+  <!-- Row 2 -->
+  <rect x="50" y="150" width="350" height="50" fill="#D4E9F7"/>
+  <rect x="400" y="150" width="350" height="50" fill="#F9D5BE"/>
+  <text x="60" y="180" font-size="14" fill="#333">• Docker controls storage location</text>
+  <text x="410" y="180" font-size="14" fill="#333">• Full host filesystem visibility</text>
+
+  <!-- Row 3 -->
+  <rect x="50" y="200" width="350" height="50" fill="#E8F4F8"/>
+  <rect x="400" y="200" width="350" height="50" fill="#FCE8DC"/>
+  <text x="60" y="230" font-size="14" fill="#333">• Portable across OS types</text>
+  <text x="410" y="230" font-size="14" fill="#333">• OS-specific paths (less portable)</text>
+
+  <!-- Row 4 -->
+  <rect x="50" y="250" width="350" height="50" fill="#D4E9F7"/>
+  <rect x="400" y="250" width="350" height="50" fill="#F9D5BE"/>
+  <text x="60" y="280" font-size="14" fill="#333">• Better isolation &amp; security</text>
+  <text x="410" y="280" font-size="14" fill="#333">• Direct access &amp; modification</text>
+
+  <!-- Row 5 -->
+  <rect x="50" y="300" width="350" height="50" fill="#E8F4F8"/>
+  <rect x="400" y="300" width="350" height="50" fill="#FCE8DC"/>
+  <text x="60" y="330" font-size="14" fill="#333">• Can't easily browse from host</text>
+  <text x="410" y="330" font-size="14" fill="#333">• Easy to inspect &amp; edit files</text>
+
+</svg>

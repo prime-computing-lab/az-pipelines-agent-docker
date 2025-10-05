@@ -1,0 +1,68 @@
+services:
+  azp-agent-1:
+    build:
+      context: .
+      dockerfile: bind-mount/Dockerfile-bind-mount-dind
+    container_name: azp-agent-1
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-1
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+
+    # Persistent storage using bind mount
+    volumes:
+      - type: bind
+        source: ./shared-artifacts
+        target: /shared-volume
+        # Host path: ./shared-artifacts (relative to docker-compose file)
+        # Container path: /shared-volume
+        # Both agents share same host directory
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true 
+        # Docker socket for Docker-in-Docker (allows container to use host Docker daemon)
+
+  azp-agent-2:
+    build:
+      context: .
+      dockerfile: bind-mount/Dockerfile-bind-mount-dind
+    container_name: azp-agent-2
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-2
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+
+    # Persistent storage using bind mount
+    volumes:
+      - type: bind
+        source: ./shared-artifacts
+        target: /shared-volume
+        read_only: true 
+        # Host path: ./shared-artifacts (relative to docker-compose file)
+        # Container path: /shared-volume
+        # Both agents share same host directory
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true 
+        # Docker socket for Docker-in-Docker (allows container to use host Docker daemon)
+
+# No volumes section needed - bind mounts reference host filesystem directly
+# The ./shared-artifacts directory will be created on the host if it doesn't exist

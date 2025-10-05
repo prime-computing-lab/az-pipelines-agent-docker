@@ -1,0 +1,122 @@
+trigger:
+  - main
+
+variables:
+  artifactPath: '/shared-volume/artifacts'  # Docker volume mount path
+  appName: 'readonly-demo-app'
+  txtFileName: '$(appName).txt'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-1-readonly  # Agent with write access
+    steps:
+    - script: |
+        echo "Building artifact with write access to bind mount..."
+        mkdir -p $(artifactPath)
+
+        # Create artifact file
+        echo "Hello from Azure Pipelines - Build $(Build.BuildId)" > $(artifactPath)/$(txtFileName)
+        echo "Build timestamp: $(date)" >> $(artifactPath)/$(txtFileName)
+        echo "Built by: $(Agent.Name)" >> $(artifactPath)/$(txtFileName)
+
+        echo "Artifact created successfully:"
+        cat $(artifactPath)/$(txtFileName)
+
+        echo ""
+        echo "Persistent storage contents:"
+        ls -la $(artifactPath)/
+      displayName: 'Create Artifact in Shared Volume'
+
+    - script: |
+        echo "Verifying write access..."
+        if [ -w "$(artifactPath)" ]; then
+          echo "✓ SUCCESS: Agent 1 has write access to bind mount"
+        else
+          echo "✗ ERROR: Agent 1 does not have write access"
+          exit 1
+        fi
+      displayName: 'Verify Write Access'
+
+- stage: Deploy
+  displayName: 'Deploy Stage with Read-Only Mount'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployReadJob
+    displayName: 'Deploy Job - Read Artifact'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-2-readonly  # Agent with read-only access
+    steps:
+    - script: |
+        echo "Reading artifact from read-only bind mount..."
+        echo ""
+        cat $(artifactPath)/$(txtFileName)
+        echo ""
+        echo "✓ SUCCESS: Can read from read-only mount"
+      displayName: 'Read Artifact (Should Succeed)'
+
+    - script: |
+        echo "=== SECURITY TEST 1: Attempting to modify existing file ==="
+        if echo "Modified by Agent 2" >> $(artifactPath)/$(txtFileName) 2>&1; then
+          echo "✗ SECURITY RISK: Was able to modify file!"
+          exit 1
+        else
+          echo "✓ EXPECTED: Write failed due to read-only mount"
+          echo "Error: Read-only file system"
+        fi
+      displayName: 'Attempt Modify File (Should Fail)'
+      continueOnError: true
+
+    - script: |
+        echo "=== SECURITY TEST 2: Attempting to create new file ==="
+        if echo "Malicious content" > $(artifactPath)/malicious.txt 2>&1; then
+          echo "✗ SECURITY RISK: Was able to create new file!"
+          exit 1
+        else
+          echo "✓ EXPECTED: Cannot create files in read-only mount"
+          echo "Error: Read-only file system"
+        fi
+      displayName: 'Attempt Create File (Should Fail)'
+      continueOnError: true
+
+    - script: |
+        echo "=== SECURITY TEST 3: Attempting to delete file ==="
+        if rm $(artifactPath)/$(txtFileName) 2>&1; then
+          echo "✗ SECURITY RISK: Was able to delete file!"
+          exit 1
+        else
+          echo "✓ EXPECTED: Cannot delete files in read-only mount"
+          echo "Error: Read-only file system"
+        fi
+      displayName: 'Attempt Delete File (Should Fail)'
+      continueOnError: true
+
+    - script: |
+        echo "========================================"
+        echo "SECURITY DEMONSTRATION COMPLETE"
+        echo "========================================"
+        echo ""
+        echo "Read-only bind mount successfully prevented:"
+        echo "  ✓ Modifying existing files"
+        echo "  ✓ Creating new files"
+        echo "  ✓ Deleting files"
+        echo ""
+        echo "Original artifact remains unchanged:"
+        echo "--------"
+        cat $(artifactPath)/$(txtFileName)
+        echo "--------"
+        echo ""
+        echo "This demonstrates the security benefit of read-only bind mounts:"
+        echo "- Follows principle of least privilege"
+        echo "- Prevents compromised containers from modifying host filesystem"
+        echo "- Limits blast radius of security incidents"
+      displayName: 'Security Verification Summary'

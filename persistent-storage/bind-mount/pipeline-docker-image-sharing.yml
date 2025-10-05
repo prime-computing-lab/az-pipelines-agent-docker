@@ -1,0 +1,95 @@
+trigger:
+  - main
+
+variables:
+  artifactPath: '/shared-volume/artifacts'  # Docker volume mount path
+  imageName: 'hello-azure-pipelines'
+  imageTag: 'latest'
+  imageTarFile: '$(imageName)-$(imageTag).tar'
+
+stages:
+- stage: Build
+  displayName: 'Build Docker Image Stage'
+  jobs:
+  - job: BuildImageJob
+    displayName: 'Build Docker Image Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-1  # Target specific agent
+    steps:
+    - script: |
+        set -e  # Exit immediately if any command fails
+
+        echo "Building Docker image..."
+        mkdir -p $(artifactPath)
+
+        # Create a Dockerfile for the hello Azure Pipelines app
+        cat <<EOF > /tmp/Dockerfile
+        FROM alpine:latest
+        RUN echo '#!/bin/sh' > /hello.sh && \
+            echo 'echo "================================================"' >> /hello.sh && \
+            echo 'echo "Hello from Azure Pipelines!"' >> /hello.sh && \
+            echo 'echo "This container was built on Agent 1"' >> /hello.sh && \
+            echo 'echo "and is now running on Agent 2"' >> /hello.sh && \
+            echo 'echo "Build Date: \$(date)"' >> /hello.sh && \
+            echo 'echo "Hostname: \$(hostname)"' >> /hello.sh && \
+            echo 'echo "================================================"' >> /hello.sh && \
+            chmod +x /hello.sh
+        CMD ["/hello.sh"]
+        EOF
+
+        # Build the Docker image
+        docker build -t $(imageName):$(imageTag) -f /tmp/Dockerfile /tmp
+
+        # Save the Docker image as a tar file to persistent storage
+        echo "Saving Docker image to persistent storage..."
+        docker save $(imageName):$(imageTag) -o $(artifactPath)/$(imageTarFile)
+
+        echo "Docker image saved successfully!"
+        echo "Persistent storage contents:"
+        ls -lh $(artifactPath)/
+      displayName: 'Build and Save Docker Image to Persistent Storage'
+
+- stage: Run
+  displayName: 'Run Container Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: RunContainerJob
+    displayName: 'Run Container Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-2  # Target different agent
+    steps:
+    - script: |
+        set -e  # Exit immediately if any command fails
+
+        echo "Loading Docker image from persistent storage..."
+        echo "Checking persistent storage..."
+        ls -lh $(artifactPath)/
+
+        # Verify the Docker image tar file exists
+        if [ -f "$(artifactPath)/$(imageTarFile)" ]; then
+          echo "Docker image found in persistent storage! Loading..."
+
+          # Load the Docker image
+          docker load -i $(artifactPath)/$(imageTarFile)
+
+          echo "Docker image loaded successfully!"
+          echo "Available images:"
+          docker images | grep $(imageName)
+
+          # Run the container
+          echo ""
+          echo "Running the container..."
+          docker run --rm $(imageName):$(imageTag)
+
+          echo ""
+          echo "Container execution completed successfully!"
+        else
+          echo "ERROR: Docker image not found in persistent storage!"
+          exit 1
+        fi
+      displayName: 'Load and Run Docker Image from Persistent Storage'

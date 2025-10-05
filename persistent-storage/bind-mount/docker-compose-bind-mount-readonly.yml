@@ -1,0 +1,58 @@
+services:
+  azp-agent-1:
+    build:
+      context: .
+      dockerfile: bind-mount/Dockerfile-bind-mount
+    container_name: azp-agent-1-readonly
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-1-readonly
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+
+    # Persistent storage using bind mount
+    volumes:
+      - type: bind
+        source: ./shared-artifacts
+        target: /shared-volume
+        # READ-WRITE access - Agent 1 can create/modify files
+
+  azp-agent-2:
+    build:
+      context: ..
+      dockerfile: bind-mount/Dockerfile-bind-mount
+    container_name: azp-agent-2-readonly
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-2-readonly
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+
+    # Persistent storage using bind mount with READ-ONLY access
+    volumes:
+      - type: bind
+        source: ./shared-artifacts
+        target: /shared-volume
+        read_only: true  # SECURITY: Prevents container from modifying host files
+        # Agent 2 can only READ artifacts, cannot write/modify/delete
+
+# SECURITY IMPLICATIONS:
+# - Without read_only: containers can change the host filesystem including
+#   creating, modifying, or deleting system files or directories
+# - With read_only: mitigates security risks by restricting write access
+# - This configuration shows Agent 1 (builder) with write access,
+#   Agent 2 (deployer) with read-only access for security
