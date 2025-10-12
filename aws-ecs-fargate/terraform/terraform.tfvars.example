@@ -1,0 +1,16 @@
+# Copy this file to terraform.tfvars and fill in your values
+# terraform.tfvars is gitignored to protect secrets
+
+aws_region  = "us-east-1"
+aws_profile = "default"
+
+cluster_name = "azp-agent-cluster"
+
+# Azure Pipelines Configuration
+azp_url   = "https://dev.azure.com/your-organization"
+azp_token = "your-personal-access-token-here"
+azp_pool  = "Default"
+
+# Task sizing (optional, defaults shown)
+task_cpu    = "256"  # 256 (.25 vCPU), 512 (.5 vCPU), 1024 (1 vCPU), etc.
+task_memory = "512"  # Must be compatible with CPU value

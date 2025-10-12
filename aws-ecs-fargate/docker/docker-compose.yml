@@ -1,0 +1,32 @@
+services:
+  azp-agent-1:
+    build: .
+    container_name: azp-agent-1
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-1
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env
+
+  azp-agent-2:
+    build: .
+    container_name: azp-agent-2
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-2
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - .env

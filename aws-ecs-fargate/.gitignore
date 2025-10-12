@@ -1,0 +1,19 @@
+# Environment files with secrets
+.env
+*.env
+!.env.example
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Terraform sensitive files (redundant with terraform/.gitignore but safe)
+*.tfvars
+!*.tfvars.example
+*.tfstate
+*.tfstate.backup
+.terraform/
+
+# AWS credentials
+.aws/
+credentials
