@@ -1,0 +1,87 @@
+trigger:
+  - main
+
+variables:
+  artifactPath: '/tmp/artifacts'
+  appName: 'hello-world-app'
+  zipFileName: '$(appName).zip'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-1  # Target specific agent
+    steps:
+    - script: |
+        echo "Running on Fargate agent in AWS"
+        echo "Agent: $(Agent.Name)"
+        echo "Agent OS: $(Agent.OS)"
+        hostname
+        uname -a
+    - script: |
+        echo "Building application..."
+        mkdir -p $(artifactPath)
+
+        # Create dummy application files
+        mkdir -p /tmp/$(appName)
+        echo "<html><body><h1>Hello World!</h1></body></html>" > /tmp/$(appName)/index.html
+        echo "body { font-family: Arial; text-align: center; }" > /tmp/$(appName)/style.css
+        echo "console.log('Hello from JavaScript!');" > /tmp/$(appName)/app.js
+        echo "# Hello World App\nA simple web application" > /tmp/$(appName)/README.md
+
+        # Create a realistic build output structure
+        mkdir -p /tmp/$(appName)/build
+        cp /tmp/$(appName)/*.html /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.css /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.js /tmp/$(appName)/build/
+
+        # Zip the build artifact
+        cd /tmp && zip -r $(zipFileName) $(appName)/
+        mv $(zipFileName) $(artifactPath)/
+
+        echo "Build completed. Artifact created: $(ls -lh $(artifactPath)/)"
+      displayName: 'Build and Save Artifact'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-2  # Target different agent
+    steps:
+    - script: |
+        echo "Running on Fargate agent in AWS"
+        echo "Agent: $(Agent.Name)"
+        echo "Agent OS: $(Agent.OS)"
+        hostname
+        uname -a
+    - script: |
+        echo "Deploying application..."
+        echo "Checking artifact storage..."
+        ls -la $(artifactPath)/
+
+        # Verify and extract the build artifact
+        if [ -f "$(artifactPath)/$(zipFileName)" ]; then
+          echo "Build artifact found! Extracting..."
+          cd /tmp
+          unzip -o $(artifactPath)/$(zipFileName)
+
+          echo "Deployed files:"
+          find $(appName) -type f -exec echo "  {}" \; -exec head -1 {} \;
+
+          echo "Deployment successful!"
+        else
+          echo "ERROR: Build artifact not found in artifact storage!"
+          exit 1
+        fi
+      displayName: 'Deploy from Shared Storage'
