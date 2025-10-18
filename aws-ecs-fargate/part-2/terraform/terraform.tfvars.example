@@ -1,0 +1,24 @@
+# AWS Configuration
+aws_region  = "ap-southeast-2"
+aws_profile = "admin-sandbox2"
+
+# ECS Cluster Configuration
+cluster_name = "my-demo-cluster-ebs-pcl"
+
+# Azure Pipelines Configuration
+azp_token = "your-azure-pipelines-pat-token-here"
+azp_pool  = "demo-agent"
+azp_url   = "https://dev.azure.com/your-organization"
+
+# Task Configuration
+task_cpu    = "256"
+task_memory = "512"
+
+# Agent Configuration
+agent_names = ["azp-agent-1-ebs", "azp-agent-2-ebs"]
+
+# EBS Volume Configuration
+ebs_volume_size = 20
+ebs_volume_type = "gp3"
+ebs_iops        = 3000
+ebs_throughput  = 125
