@@ -77,7 +77,7 @@ ECS Fargate Tasks (UID 1000) → EFS Access Point (UID 1000) → EFS File System
 
 ## Demo Walkthrough
 
-### Phase 1: The Problem ❌
+### Phase 1: The Problem 
 
 1. **Verify agents** in Azure DevOps (Project Settings → Agent Pools)
 2. **Run pipeline** `azure-pipelines/pipeline-shared-efs-storage.yml`
@@ -89,7 +89,7 @@ ECS Fargate Tasks (UID 1000) → EFS Access Point (UID 1000) → EFS File System
 - EFS enforces POSIX permissions at filesystem level
 - No matching ownership = permission denied
 
-### Phase 2: The Solution ✅
+### Phase 2: The Solution 
 
 **Create EFS Access Point:**
 ```bash
@@ -151,7 +151,7 @@ aws ecs list-tasks --cluster $CLUSTER_NAME --query 'taskArns[]' --output text | 
 
 **Estimated Costs** (ap-southeast-2):
 - EFS Standard: ~$0.30/GB/month
-- Fargate (2 tasks @ 1 vCPU, 2GB): ~$58/month continuous
+- Fargate (2 tasks @ 1 vCPU, 2GB): ~$9/month continuous
 
 ## Cleanup
 
