@@ -1,0 +1,52 @@
+services:
+  azp-agent-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azp-agent-1
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-1-ebs
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - ../.env
+
+    # Persistent storage using Docker volume (simulates EBS volume for local testing)
+    volumes:
+      - shared-artifacts:/shared-volume
+
+  azp-agent-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: azp-agent-2
+    restart: unless-stopped
+
+    # Environment variables - use .env file for local development
+    environment:
+      - AZP_URL=${AZP_URL}
+      - AZP_TOKEN=${AZP_TOKEN}
+      - AZP_POOL=${AZP_POOL:-Default}
+      - AZP_AGENT_NAME=azp-agent-2-ebs
+
+    # Use environment file for secrets (not tracked in git)
+    env_file:
+      - ../.env
+
+    # Persistent storage using Docker volume (simulates EBS volume for local testing)
+    volumes:
+      - shared-artifacts:/shared-volume
+        # volume name managed by docker: path inside container
+        # both agents share same volume (simulating EBS shared between tasks)
+
+# Define the shared Docker volume
+# This simulates the EBS volume behavior for local testing
+volumes:
+  shared-artifacts:
+    driver: local

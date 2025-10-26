@@ -1,0 +1,171 @@
+{
+    "taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:ap-southeast-2:123456789012:task-definition/azp-agent-demo-efs:3",
+        "containerDefinitions": [
+            {
+                "name": "azp-agent-efs-1",
+                "image": "123456789012.dkr.ecr.ap-southeast-2.amazonaws.com/azp-agent-aws-ecs-fargate-efs:latest",
+                "cpu": 0,
+                "portMappings": [],
+                "essential": true,
+                "environment": [
+                    {
+                        "name": "AZP_AGENT_NAME",
+                        "value": "azp-agent-efs-1"
+                    }
+                ],
+                "mountPoints": [
+                    {
+                        "sourceVolume": "efs-storage",
+                        "containerPath": "/shared-storage",
+                        "readOnly": false
+                    }
+                ],
+                "volumesFrom": [],
+                "secrets": [
+                    {
+                        "name": "AZP_TOKEN",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_TOKEN::"
+                    },
+                    {
+                        "name": "AZP_POOL",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_POOL::"
+                    },
+                    {
+                        "name": "AZP_URL",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_URL::"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/azp-agent-demo-efs",
+                        "awslogs-region": "ap-southeast-2",
+                        "awslogs-stream-prefix": "azp-agent-efs-1"
+                    }
+                },
+                "systemControls": []
+            },
+            {
+                "name": "azp-agent-efs-2",
+                "image": "123456789012.dkr.ecr.ap-southeast-2.amazonaws.com/azp-agent-aws-ecs-fargate-efs:latest",
+                "cpu": 0,
+                "portMappings": [],
+                "essential": true,
+                "environment": [
+                    {
+                        "name": "AZP_AGENT_NAME",
+                        "value": "azp-agent-efs-2"
+                    }
+                ],
+                "mountPoints": [
+                    {
+                        "sourceVolume": "efs-storage",
+                        "containerPath": "/shared-storage",
+                        "readOnly": false
+                    }
+                ],
+                "volumesFrom": [],
+                "secrets": [
+                    {
+                        "name": "AZP_TOKEN",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_TOKEN::"
+                    },
+                    {
+                        "name": "AZP_POOL",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_POOL::"
+                    },
+                    {
+                        "name": "AZP_URL",
+                        "valueFrom": "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:azp-agent-credentials-efs-XXXXXX:AZP_URL::"
+                    }
+                ],
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/azp-agent-demo-efs",
+                        "awslogs-region": "ap-southeast-2",
+                        "awslogs-stream-prefix": "azp-agent-efs-2"
+                    }
+                },
+                "systemControls": []
+            }
+        ],
+        "family": "azp-agent-demo-efs",
+        "taskRoleArn": "arn:aws:iam::123456789012:role/ecsTaskRoleDemoEFS",
+        "executionRoleArn": "arn:aws:iam::123456789012:role/ecsTaskExecutionRoleDemoEFS",
+        "networkMode": "awsvpc",
+        "revision": 3,
+        "volumes": [
+            {
+                "name": "efs-storage",
+                "efsVolumeConfiguration": {
+                    "fileSystemId": "fs-xxxxxxxxxxxx",
+                    "rootDirectory": "/",
+                    "transitEncryption": "ENABLED",
+                    "authorizationConfig": {
+                        "accessPointId": "fsap-xxxxxxxxxxxxxxxxx",
+                        "iam": "ENABLED"
+                    }
+                }
+            }
+        ],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.efsAuth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "ecs.capability.secrets.asm.environment-variables"
+            },
+            {
+                "name": "ecs.capability.efs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.25"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE",
+            "MANAGED_INSTANCES"
+        ],
+        "runtimePlatform": {
+            "cpuArchitecture": "ARM64",
+            "operatingSystemFamily": "LINUX"
+        },
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "256",
+        "memory": "512",
+        "registeredAt": "2025-10-22T15:56:12.489000+10:00",
+        "registeredBy": "arn:aws:sts::123456789012:assumed-role/AWSReservedSSO_AdministratorAccess_52ef6d19184f5263/user@example.com"
+    },
+    "tags": []
+}

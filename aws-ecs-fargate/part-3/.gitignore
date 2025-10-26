@@ -1,0 +1,23 @@
+# Environment files with sensitive data
+.env
+
+# Terraform state files
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# Docker build artifacts
+docker/.dockerignore
+
+# OS files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.iml

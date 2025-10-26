@@ -1,0 +1,138 @@
+trigger:
+  - main
+
+variables:
+  artifactPath: '/shared-storage/artifacts'  # EFS volume mount path
+  appName: 'hello-world-app'
+  zipFileName: '$(appName).zip'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-efs-1  # Target specific agent
+    steps:
+    - script: |
+        echo "=============================================="
+        echo "Building application on Agent 1..."
+        echo "=============================================="
+        mkdir -p $(artifactPath)
+
+        # Create dummy application files
+        mkdir -p /tmp/$(appName)
+        echo "<html><body><h1>Hello World from EFS!</h1></body></html>" > /tmp/$(appName)/index.html
+        echo "body { font-family: Arial; text-align: center; }" > /tmp/$(appName)/style.css
+        echo "console.log('Hello from EFS shared storage!');" > /tmp/$(appName)/app.js
+        echo "# Hello World App\nA simple web application stored on EFS" > /tmp/$(appName)/README.md
+
+        # Create a realistic build output structure
+        mkdir -p /tmp/$(appName)/build
+        cp /tmp/$(appName)/*.html /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.css /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.js /tmp/$(appName)/build/
+
+        # Zip the build artifact
+        cd /tmp && zip -r $(zipFileName) $(appName)/
+        mv $(zipFileName) $(artifactPath)/
+
+        # Write build metadata to shared EFS storage
+        echo "Build completed at: $(date)" > $(artifactPath)/build-metadata.txt
+        echo "Built by: $(hostname)" >> $(artifactPath)/build-metadata.txt
+        echo "Agent: ${AZP_AGENT_NAME}" >> $(artifactPath)/build-metadata.txt
+
+        echo ""
+        echo "Build completed. Artifact created:"
+        ls -lh $(artifactPath)/$(zipFileName)
+        echo ""
+        echo "EFS shared storage contents:"
+        ls -la $(artifactPath)/
+        echo ""
+        cat $(artifactPath)/build-metadata.txt
+      displayName: 'Build and Save Artifact to EFS Shared Storage'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-efs-2  # Target different agent
+    steps:
+    - script: |
+        echo "=============================================="
+        echo "Deploying application on Agent 2..."
+        echo "=============================================="
+        echo "Checking EFS shared storage..."
+        ls -la $(artifactPath)/
+
+        # Display build metadata from EFS
+        if [ -f "$(artifactPath)/build-metadata.txt" ]; then
+          echo ""
+          echo "Build metadata from EFS:"
+          cat $(artifactPath)/build-metadata.txt
+        fi
+
+        # Verify and extract the build artifact
+        if [ -f "$(artifactPath)/$(zipFileName)" ]; then
+          echo ""
+          echo "✓ Build artifact found in EFS shared storage!"
+          echo "  This demonstrates EFS cross-container data sharing"
+          echo ""
+          cd /tmp
+          unzip -o $(artifactPath)/$(zipFileName)
+
+          echo "Deployed files:"
+          find $(appName) -type f -exec echo "  {}" \; -exec head -1 {} \;
+
+          # Write deployment metadata to shared EFS storage
+          echo "" >> $(artifactPath)/build-metadata.txt
+          echo "Deployed at: $(date)" >> $(artifactPath)/build-metadata.txt
+          echo "Deployed by: $(hostname)" >> $(artifactPath)/build-metadata.txt
+          echo "Agent: ${AZP_AGENT_NAME}" >> $(artifactPath)/build-metadata.txt
+
+          echo ""
+          echo "✓ Deployment successful from EFS shared storage!"
+          echo ""
+          echo "Updated metadata:"
+          cat $(artifactPath)/build-metadata.txt
+        else
+          echo "ERROR: Build artifact not found in EFS shared storage!"
+          exit 1
+        fi
+      displayName: 'Deploy from EFS Shared Storage'
+
+- stage: Verify
+  displayName: 'Verify Shared Storage'
+  dependsOn: Deploy
+  condition: succeeded()
+  jobs:
+  - job: VerifyJob
+    displayName: 'Verify Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-efs-1  # Back to agent 1
+    steps:
+    - script: |
+        echo "=============================================="
+        echo "Verifying EFS Shared Storage (Back on Agent 1)"
+        echo "=============================================="
+        echo ""
+        echo "EFS storage contents:"
+        ls -lah $(artifactPath)/
+        echo ""
+        echo "Complete build and deployment metadata:"
+        cat $(artifactPath)/build-metadata.txt
+        echo ""
+        echo "✓ EFS verification complete!"
+        echo "  Both agents successfully shared data via EFS"
+      displayName: 'Verify EFS Data Persistence and Sharing'

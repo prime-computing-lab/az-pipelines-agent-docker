@@ -1,0 +1,18 @@
+# AWS Configuration
+aws_region  = "ap-southeast-2"
+aws_profile = "admin-sandbox2"
+
+# ECS Cluster Configuration
+cluster_name = "my-demo-cluster-efs-pcl"
+
+# Azure Pipelines Configuration
+azp_token = "your-azure-pipelines-pat-token-here"
+azp_pool  = "demo-agent"
+azp_url   = "https://dev.azure.com/your-organization"
+
+# Task Configuration
+task_cpu    = "1024"
+task_memory = "2048"
+
+# Agent Configuration
+agent_names = ["azp-agent-efs-1", "azp-agent-efs-2"]
