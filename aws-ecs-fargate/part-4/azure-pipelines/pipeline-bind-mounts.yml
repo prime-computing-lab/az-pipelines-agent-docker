@@ -1,0 +1,78 @@
+trigger:
+  - main
+
+variables:
+  artifactPath: '/shared-storage/artifacts'  # Bind mount path
+  appName: 'hello-world-app'
+  zipFileName: '$(appName).zip'
+
+stages:
+- stage: Build
+  displayName: 'Build Stage'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-1-bind-mounts  # Target specific agent
+    steps:
+    - script: |
+        echo "Building application..."
+        mkdir -p $(artifactPath)
+
+        # Create dummy application files
+        mkdir -p /tmp/$(appName)
+        echo "<html><body><h1>Hello World!</h1></body></html>" > /tmp/$(appName)/index.html
+        echo "body { font-family: Arial; text-align: center; }" > /tmp/$(appName)/style.css
+        echo "console.log('Hello from JavaScript!');" > /tmp/$(appName)/app.js
+        echo "# Hello World App\nA simple web application" > /tmp/$(appName)/README.md
+
+        # Create a realistic build output structure
+        mkdir -p /tmp/$(appName)/build
+        cp /tmp/$(appName)/*.html /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.css /tmp/$(appName)/build/
+        cp /tmp/$(appName)/*.js /tmp/$(appName)/build/
+
+        # Zip the build artifact
+        cd /tmp && zip -r $(zipFileName) $(appName)/
+        mv $(zipFileName) $(artifactPath)/
+
+        echo "Build completed. Artifact created: $(ls -lh $(artifactPath)/)"
+        echo "Bind mount storage contents:"
+        ls -la $(artifactPath)/
+      displayName: 'Build and Save Artifact to Bind Mount'
+
+- stage: Deploy
+  displayName: 'Deploy Stage'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: DeployJob
+    displayName: 'Deploy Job'
+    pool:
+      name: demo-agent
+      demands:
+      - agent.name -equals azp-agent-2-bind-mounts  # Target different agent
+    steps:
+    - script: |
+        echo "Deploying application..."
+        echo "Checking bind mount storage..."
+        ls -la $(artifactPath)/
+
+        # Verify and extract the build artifact
+        if [ -f "$(artifactPath)/$(zipFileName)" ]; then
+          echo "Build artifact found in bind mount storage! Extracting..."
+          cd /tmp
+          unzip -o $(artifactPath)/$(zipFileName)
+
+          echo "Deployed files:"
+          find $(appName) -type f -exec echo "  {}" \; -exec head -1 {} \;
+
+          echo "Deployment successful from bind mount storage!"
+        else
+          echo "ERROR: Build artifact not found in bind mount storage!"
+          echo "NOTE: Bind mounts are tied to container lifecycle - data may be lost on task restart"
+          exit 1
+        fi
+      displayName: 'Deploy from Bind Mount Storage'

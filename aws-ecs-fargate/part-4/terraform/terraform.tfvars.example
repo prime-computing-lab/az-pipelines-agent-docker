@@ -1,0 +1,22 @@
+# AWS Configuration
+aws_region  = "us-east-1"
+aws_profile = "default"
+
+# ECS Configuration
+cluster_name = "my-demo-cluster-bind-mounts"
+
+# Azure Pipelines Configuration
+azp_token = "your-azure-pipelines-pat-token-here"
+azp_pool  = "your-agent-pool-name"
+azp_url   = "https://dev.azure.com/your-organization"
+
+# Task Configuration
+task_cpu    = "256"
+task_memory = "512"
+
+# Agent Configuration
+agent_names = ["azp-agent-1-bind-mounts", "azp-agent-2-bind-mounts"]
+
+# Platform Configuration
+cpu_architecture        = "ARM64"  # or "X86_64"
+operating_system_family = "LINUX"
